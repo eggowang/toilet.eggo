@@ -1,4 +1,4 @@
-const CACHE_NAME = "toilet-tracker-v2";
+const CACHE_NAME = "toilet-tracker-v3";
 const ASSETS = ["./", "./index.html", "./style.css", "./script.js", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (event) => {

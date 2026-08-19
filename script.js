@@ -10,6 +10,7 @@ const state = {
 };
 
 let deferredInstallPrompt = null;
+let lastFocusedElement = null;
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -35,7 +36,7 @@ function saveRecords() {
 function sanitizeRecord(value) {
   if (!value || typeof value !== "object") return null;
   const type = value.type === "urine" ? "urine" : value.type === "bowel" ? "bowel" : null;
-  const date = typeof value.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value.date) ? value.date : null;
+  const date = typeof value.date === "string" && isValidDateKey(value.date) ? value.date : null;
   const time = typeof value.time === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(value.time) ? value.time : null;
   if (!type || !date || !time || Number.isNaN(fromDateKey(date).getTime())) return null;
   const conditions = ["偏硬", "正常", "偏软", "水样"];
@@ -62,6 +63,12 @@ function toDateKey(date) {
 function fromDateKey(key) {
   const [year, month, day] = key.split("-").map(Number);
   return new Date(year, month - 1, day);
+}
+
+function isValidDateKey(key) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) return false;
+  const date = fromDateKey(key);
+  return !Number.isNaN(date.getTime()) && toDateKey(date) === key;
 }
 
 function formatDate(key, includeYear = false) {
@@ -180,15 +187,28 @@ function renderAll() {
 }
 
 function openSheet(sheet) {
+  lastFocusedElement = document.activeElement;
   $("#backdrop").classList.add("is-open");
+  clearTimeout(sheet.hideTimer);
+  sheet.hidden = false;
+  sheet.removeAttribute("inert");
+  sheet.setAttribute("aria-hidden", "false");
   sheet.classList.add("is-open");
   document.body.style.overflow = "hidden";
+  requestAnimationFrame(() => sheet.querySelector("[data-close]")?.focus());
 }
 
 function closeSheets() {
   $("#backdrop").classList.remove("is-open");
-  $$(".sheet").forEach((sheet) => sheet.classList.remove("is-open"));
+  $$(".sheet").forEach((sheet) => {
+    sheet.classList.remove("is-open");
+    sheet.setAttribute("aria-hidden", "true");
+    sheet.setAttribute("inert", "");
+    clearTimeout(sheet.hideTimer);
+    sheet.hideTimer = setTimeout(() => { sheet.hidden = true; }, 320);
+  });
   document.body.style.overflow = "";
+  lastFocusedElement?.focus?.();
 }
 
 function selectButton(group, button) {
@@ -198,12 +218,14 @@ function selectButton(group, button) {
 
 function resetForm() {
   const now = new Date();
+  const todayKey = toDateKey(now);
+  const safeDate = state.selectedDate > todayKey ? todayKey : state.selectedDate;
   state.type = "bowel";
   state.condition = "正常";
   state.feeling = "一般";
   $("#recordId").value = "";
-  $("#recordDate").value = isToday(state.selectedDate) ? toDateKey(now) : state.selectedDate;
-  $("#recordDate").max = toDateKey(now);
+  $("#recordDate").value = safeDate;
+  $("#recordDate").max = todayKey;
   $("#recordTime").value = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
   $("#recordNote").value = "";
   $("#sheetTitle").textContent = "记一次如厕";
@@ -249,6 +271,7 @@ function editRecord(id) {
   state.feeling = record.feeling || "一般";
   $("#recordId").value = record.id;
   $("#recordDate").value = record.date;
+  $("#recordDate").max = toDateKey(new Date());
   $("#recordTime").value = record.time;
   $("#recordNote").value = record.note || "";
   $("#sheetTitle").textContent = "编辑记录";
@@ -446,6 +469,20 @@ window.addEventListener("appinstalled", () => {
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
   window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
 }
+
+function finishSplash() {
+  const splash = $("#splashScreen");
+  if (!splash) return;
+  splash.classList.add("is-leaving");
+  setTimeout(() => {
+    splash.remove();
+    document.body.classList.remove("splash-active");
+  }, reduceMotion ? 30 : 520);
+}
+
+document.body.classList.add("splash-active");
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+setTimeout(finishSplash, reduceMotion ? 40 : 1350);
 
 $("#todayEyebrow").textContent = new Intl.DateTimeFormat("zh-CN", { month: "long", day: "numeric", weekday: "long" }).format(new Date());
 renderAll();

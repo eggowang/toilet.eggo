@@ -15,6 +15,15 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <div class="splash-screen" id="splashScreen" aria-hidden="true">
+      <div class="splash-stars"><span>✦</span><span>•</span><span>✦</span></div>
+      <div class="splash-mascot">
+        <span class="splash-orbit"></span>
+        <span class="splash-face">☻</span>
+      </div>
+      <p>便便日记<span>.</span></p>
+      <small>今天也要轻松一点</small>
+    </div>
     <div class="app-shell">
       <header class="topbar">
         <div>
@@ -118,7 +127,7 @@
 
     <div class="backdrop" id="backdrop"></div>
 
-    <section class="sheet" id="recordSheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <section class="sheet" id="recordSheet" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="sheetTitle" inert hidden>
       <div class="sheet-handle"></div>
       <div class="sheet-head">
         <div><p class="eyebrow">QUICK LOG</p><h2 id="sheetTitle">记一次如厕</h2></div>
@@ -160,7 +169,7 @@
       </form>
     </section>
 
-    <section class="sheet compact-sheet" id="settingsSheet" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <section class="sheet compact-sheet" id="settingsSheet" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="settingsTitle" inert hidden>
       <div class="sheet-handle"></div>
       <div class="sheet-head"><div><p class="eyebrow">PRIVATE & LOCAL</p><h2 id="settingsTitle">数据设置</h2></div><button class="close-button" data-close aria-label="关闭">×</button></div>
       <p class="privacy-note">所有记录只保存在当前浏览器。换手机或清理浏览器前，请先导出备份。</p>
